@@ -1,0 +1,255 @@
+---
+title: "PR02 Streaming Services Data"
+author: "PUT YOUR NAMES HERE"
+date: '`r format(Sys.time(), "%A, %B %d, %Y @ %I:%M %p")`'
+output: 
+  html_document: 
+    theme: cosmo
+    highlight: textmate
+    code_folding: hide
+---
+
+```{r globaloptions, include = FALSE}
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  comment = NA
+)
+```
+***
+
+## Setup
+
+### Packages Used
+
+```{r loadpackages}
+library(tidyverse)
+library(skimr)
+```
+
+### Datasets Used
+
+### Background of the Data
+
+Two files containing data about thge content of streaming services were downloaded from Kaggle:  [Disney+ Movies and TV Shows](https://www.kaggle.com/datasets/shivamb/disney-movies-and-tv-shows) and [TV shows on Netflix, Prime Video, Hulu and Disney+](https://www.kaggle.com/datasets/ruchi798/tv-shows-on-netflix-prime-video-hulu-and-disney). You can read about them there, including variable definitions, sources, when they were created, and other information. Read the two datasets from the `data_raw` folder and use `skim()` to explore their structures.
+
+#### Disney+ Content Dataset
+
+```{r readdisneydata}
+disneydata <- read.csv("../data_raw/disneypluscontent_2021_11_21.csv")
+```
+
+#```{r skimdisneydata}
+disneydata <- read.csv("../data_raw/disneypluscontent_2021_11_21.csv") %>%
+skim(disneydata)
+#```
+
+#### Streaming TV Content Dataset
+
+```{r readstreamingdata}
+streaming1 <- read.csv("../data_raw/streamingtvcontent_2021.csv")
+```
+
+#```{r skimstreamingdata}
+streaming1 <- read.csv("../data_raw/streamingtvcontent_2021.csv")
+skim(streaming_data)
+streaming_data
+#```
+
+***
+
+## Analyses
+
+### Clean, Tidy, and Save the Data
+
+#### Dataset #1: Disney+ Data
+
+The Disney+ dataset contains a variable that gives information about the `rating` for each program offering. Convert that variable into a factor that puts the ratings in (roughly) ascending order of age restriction/audience: `TV-Y`, `TV-Y7`, `TV-Y7-FV`, `TV-G`, `G`, `TV-PG`, `PG`, `PG-13`, `TV-14`. Delete the `show_id`, `director`, `cast`, and `description` variables. You should be able to do this all in one piped sequence.
+
+```{r factor&select}
+disney1 <- read.csv("../data_raw/disneypluscontent_2021_11_21.csv") %>%
+
+  select(-c(show_id, director, cast, description)) 
+disney1$rating <- factor(disney1$rating, 
+         levels = c("TV-Y", "TV-Y7", "TV-Y7-FV", "TV-G", "G", "TV-PG", "PG", "PG-13", "TV-14"))
+```
+
+#### Dataset #2: Streaming TV Data
+
+Perform the following manipulations to tidy the streaming TV data for analysis. You should be able to do this all in one piped sequence.
+
+* Pivot the `Netflix`, `Hulu`, `Prime Video`, and `Disney+` variables into two columns called `Service` (containing the name of the streaming service) and `YesNo` (containing the 0/1 values from the original columns).
+* Filter the dataset to remove any row where `YesNo == 0` (i.e., a show is *not* on the service).
+* Separate the `IMDb` variable to split each show's actual rating from the maximum possible rating of `10`. 
+* Convert the show's actual IMDB rating into a numerical variable and get rid of the column containing `10`.
+* Separate the `Rotten Tomatoes` variable to split each show's actual rating from the maximum possible rating of `100`. 
+* Convert the show's actual Rotten Tomatoes rating into a numerical variable and get rid of the column containing `100`.
+
+```{r pivotandtidy}
+streaming1 <- read.csv("../data_raw/streamingtvcontent_2021.csv") %>%
+
+  pivot_longer(
+    cols = c("Netflix", "Hulu", "Prime.Video", "Disney."),
+    names_to = "Service",
+    values_to = "YesNo") %>%
+  filter(!(YesNo == 0)) %>%
+  separate(col = IMDb, 
+           into = c("rawIMDb","tens"),
+           sep = "/") %>%
+  select(-tens) %>%
+  separate(col = Rotten.Tomatoes,
+           into = c("rawRT", "hundreds")) %>%
+  select(-hundreds)
+
+# Couldn't convert IMDb and Rotten Tomatoes columns to numeric as part of the piped sequence ("Error: object 'rawIMDb' not found") so they're changed in separate lines below
+
+streaming1$IMDb <- as.numeric(streaming1$rawIMDb) 
+streaming1$RT <- as.numeric(streaming1$rawRT)
+```
+
+#### Save the Formatted Data Files
+
+Save both data files in a single`.RData` file in the `data_tidy` folder.
+
+```{r savedatafiles}
+save(disney1, streaming1, file = "../data_tidy/streamingdata.RData")
+
+```
+
+### Analysis 1: Disney Content & Release Years
+
+**This analysis uses Dataset #1.**
+
+#### Release Years by Program Type---Plot #1
+
+Create a violin plot of `release_year` (x axis) grouped by `type` of program (y axis) for programs on Disney+. Add a boxplot inside the violin plot. Re-scale the X axis so that tick marks appear at whole-decade intervals (e.g., 1980, 1990, 2000). Include an informative title and axis labels. Add at least two other types of formatting to enhance the effectiveness and/or appearance of your plot (e.g., themes, colors, etc).
+
+```{r violinplot}
+
+ggplot(streaming1, aes(x = Year, y = Service)) + 
+  geom_violin(trim=FALSE, fill= "lightyellow", color="blue") +
+  geom_boxplot(width = 0.1, outlier.size = 4) +
+labs( title = "Comparing Release Years to the Diffrent Sreaming Serviece",
+      x = "Release Year",
+      y = "Streaming Services")
+```
+
+#### Release Years by Program Type---Plot #2
+
+Create a histogram for `release_year` with `type` as a fill variable. Choose a reasonable number of bins or bin width. Re-scale the X axis so that tick marks appear at whole-decade intervals (e.g., 1980, 1990, 2000). Scale the Y axis to have reasonably spaced tick marks. Add vertical lines with annotations to indicate the debuts of the Disney Brothers Cartoon Studio (1923), the Disney Channel on TV (1983), and Disney+ streaming service (2019). Include an informative title and axis labels. Delete the title "type" from the legend. Add at least two other types of formatting to enhance the effectiveness and/or appearance of your plot (e.g., themes, colors, etc).
+
+```{r histogram}
+ggplot(disney1, aes(x = release_year, fill = type)) +
+  geom_histogram(binwidth = 8, colour = "black", alpha = 0.5) +
+  geom_vline(xintercept = c(1923, 1983, 2019), linetype = "dashed") +
+  scale_x_continuous(breaks = seq(1920, 2020, by = 10)) +
+  scale_fill_manual(values = c("blue", "green")) +
+  labs(title = "Disney Release Years", x = "Year of Release", y = "Number of Releases") +
+theme_minimal() +
+  theme(legend.position = "bottom", legend.title = element_blank()) +
+annotate(geom = "label", x = 1930, y = 350, label = "Disney Studio Debut") +
+annotate(geom = "label", x = 1985, y = 425, label = "Disney Channel TV") +
+annotate(geom = "label", x = 2020, y = 300, label = "Disney Plus Debut")
+```
+
+#### Release Years by Program Type---Summary
+
+Create a quantitative summary of `release_year` by program `type` that shows the oldest release year, the median release year, and the newest release year for each group of programs (i.e., movies and TV shows).
+
+```{r summarystats}
+
+```
+
+### Analysis 2: Disney Content & Ratings
+
+**This analysis uses Dataset #1.**
+
+Create a horizontal barplot to show the frequencies of the various `rating` categories for programs on Disney+ (i.e., use `y =` rather than `x =` for the variable you are plotting). **You will need to remove a couple `NA` values before plotting** Facet by `type` so that you have side-by-side plots for the two different program types. Add an informative title and axis labels, as well as at least two other types of useful formatting. 
+
+```{r ratingsbarplot}
+
+```
+
+### Analysis 3: Content on Different Services
+
+**This analysis uses Dataset #2.**
+
+#### Quantity of Content by Service
+
+Create an appropriate barplot to show the number of TV shows offered by the four streaming services. Include an informative title and axis labels. Add at least two other types of formatting to enhance the effectiveness and/or appearance of your plot (e.g., themes, colors, etc).
+
+```{r servicequantity}
+ggplot(streaming1, aes(x = Service, fill = Service)) + 
+  geom_bar() +
+  scale_fill_manual(values = c("navyblue", "springgreen3", "firebrick", "steelblue3")) +
+  geom_text(aes(label = ..count..), stat = "count", vjust = 2, colour = "white") +
+  labs(title = "Number of Shows Offered on Prominent Streaming Services", 
+       x = element_blank(), 
+       y = "Number of Shows")
+```
+
+#### Quality of Content by Service
+
+Create an appropriate plot to compare either IMDB or Rotten Tomatoes ratings for content on the streaming services. Include an informative title and axis labels. Add at least two other types of formatting to enhance your plot (e.g., themes, colors, etc).
+
+```{r serviceratings}
+ggplot(streaming1, aes(x = Service, y = rawRT)) +
+  geom_boxplot( color = "black") +
+  theme(panel.grid.major.x = element_blank()) +
+  labs(title = "Rotten Tomatoes Ratings of Shows on Prominent Streaming Services", 
+       x = element_blank(), 
+       y = "Rotten Tomatoes ratings")
+```
+
+### Analysis 4: Choose Your Own Plot!
+
+**This plot uses either dataset.**
+
+Create one other plot of your choice using either dataset to explore a question of interest. It should not be too similar to any of the plots you made above. You are welcome to perform additional manipulations on the data, if needed. Add an appropriate title and axis labels, as well as any other necessary formatting to make your plot clear and effective.
+
+```{r choiceplot}
+ggplot(data = disney1, aes(x = release_year, fill = type)) +
+  geom_bar() + coord_flip() +
+   labs(
+    title = "Types of Films Produced by Disney Between 1925 and 2025",
+    x = "Year",
+    y = "Number of Fimls Produced",
+    fill = "Telivision Film Catagories")
+
+
+```
+
+***
+
+## Questions
+
+**Question 1:** Based on your plots, make five informational statements or comparisons regarding the Disney+ streaming service.
+
+**ANSWER**
+
+1) Disney Plus offers the least amount of TV shows through their streaming service
+
+2) Disney Plus has become available to users when Disney had their highest amount of movies and TV shows
+
+3) Disney did not start producing TV shows until the late 1990's whereas movies have been produced since the late 1920's
+
+4) All streaming companies have his a spike at relatively the same time in the early 2000's
+
+5) The ratings between companies show to be consistent with one another- proving one is not better than the other- that the shows are equally rated between all. 
+
+**Question 2:** What other data would you like to have, or which existing variables would you like to see transformed, if you were going to do further explorations or visualizations? Give at least two examples.
+
+**ANSWER**
+
+I believe that a few additional timeline graphs comparing firms would be good. Perhaps a stacked plot comparing TV series and movies, as well as a year axis, would be useful to compare between the companies. I wish the data tables  had an average user time allocation so that I could compare whether a certain a streaming service is preferred or most frequently utilized over others. 
+
+**Question 3:** Explain the rationale behind the choices you made with regard to plot type, formatting, and so on, when you created Analysis 4. What motivated your decisions with regard to this plot? 
+
+**ANSWER**
+
+I picked this arrangement because I wanted to highlight the various disparities between the movies and tv episodes made by Disney, especially when it was found that Disney has the fewest number of TV shows available on their streaming service. However, this is widely represented in society because Disney is best renowned for its family-friendly films. I picked two colors for the graph to highlight the significant contrasts. I also wanted to present a timetable and the number of films produced so that those could be visually analyzed.  
+***
+```{r}
+sessionInfo()
+```
+

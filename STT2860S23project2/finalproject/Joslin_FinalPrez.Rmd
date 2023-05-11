@@ -1,0 +1,114 @@
+---
+title: "Final Presentation"
+author: "Laura Joslin"
+date: '2023-05-10'
+output: ioslides_presentation
+---
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, # hide all the code
+  message = FALSE,
+  warning = FALSE,
+  comment = NA
+)
+```
+
+## *Packages Used*
+
+
+```{r, echo = TRUE}
+library(tidyverse)
+```
+**I used this package for data manipulation.**
+
+
+```{r, echo = TRUE}
+library(skimr)
+```
+**I used this package to help manipulate my data frames, tibbles, data tables and vectors.**
+
+
+```{r, echo = TRUE}
+library(ggplot2)
+```
+**I used this package with creating the graphics.**
+
+
+
+## Urban Park Ranger Animal Condition Response
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+
+* *This dataset provides information on animal help, relocation, and/or rescue requests conducted by the Urban Park Rangers.*
+
+* *This data was found on data.gov*
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+**- There are 2,609 rows in this data set**
+
+**- There are 22 columns, or variables in this data set**
+
+**- Each row is a request completed by Urban Park Rangers**   
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+
+## Skimming the Data
+```{r}
+rawdata <- read_csv("https://data.cityofnewyork.us/resource/fuhs-xmg2.csv?$query=SELECT%0A%20%20%60date_and_time_of_initial%60%2C%0A%20%20%60date_and_time_of_ranger%60%2C%0A%20%20%60borough%60%2C%0A%20%20%60property%60%2C%0A%20%20%60location%60%2C%0A%20%20%60species_description%60%2C%0A%20%20%60call_source%60%2C%0A%20%20%60species_status%60%2C%0A%20%20%60animal_condition%60%2C%0A%20%20%60duration_of_response%60%2C%0A%20%20%60age%60%2C%0A%20%20%60animal_class%60%2C%0A%20%20%60_311sr_number%60%2C%0A%20%20%60final_ranger_action%60%2C%0A%20%20%60of_animals%60%2C%0A%20%20%60pep_response%60%2C%0A%20%20%60animal_monitored%60%2C%0A%20%20%60rehabilitator%60%2C%0A%20%20%60hours_spent_monitoring%60%2C%0A%20%20%60police_response%60%2C%0A%20%20%60esu_response%60%2C%0A%20%20%60acc_intake_number%60")
+rawdata
+```
+## Wow that is a lot of data! 
+
+*Lets narrow it down a bit to explore the critical information*
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+
+***VARIBLES:***
+
+* `of_animals`: Number of animals
+
+* `animal_condition`: The animal's condition when discovered
+
+* `final_ranger_action`: The park ranger's plan of action after discovering and observing the animal
+
+* `animal_class`: The classification that the animal was identified into
+
+## PLOT ONE: BAR GRAPH
+
+```{r}
+ggplot(rawdata, aes(x=animal_class, fill = of_animals)) + 
+ geom_bar(size=2, shape=23, fill = "hot pink") +
+theme(axis.text.x=element_text(angle = -90, hjust = 0)) +
+ labs(
+    title = "Classification of Animals conducted by Urban Park Rangers",
+    x = "animal classifications",
+    y = " number of animals",
+   )
+```
+
+## PLOT TWO: Stacked Bar Chart
+
+```{r}
+ggplot(data = rawdata, aes(x = animal_condition, fill = type)) +
+  geom_bar() + coord_flip() +
+   labs(
+    title = "Urban Park Ranger Actions In Response to Animal Condtins",
+    x = "the condition that the animal were found in",
+    y = " number of animals",
+    fill = "park ranger actions"
+  )
+```
+
+
+
+
+
+
+
+
+
+
+

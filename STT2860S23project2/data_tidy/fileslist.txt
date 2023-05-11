@@ -1,0 +1,7 @@
+# This folder should contain the following files when you are done:
+
+# An .rds file of the tidy data produced by the ML_CO2data.R script
+# An Excel file of the tidy data produced by the powerballdata.R script
+# An Rdata file containing the group's saved tidied streaming data files
+# An .rds file containing the joined NFL data files (individual project)
+# A .csv file containing the joined NFL data files (individual project)
